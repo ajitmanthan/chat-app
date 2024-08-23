@@ -48,7 +48,7 @@ router.post('/signin', async (req, res) => {
       ismatch = await bcrypt.compare(password,data.password)
 
     if(ismatch){
-      const token = jweb.sign({ email: email }, secret, { expiresIn: '3d' })
+      const token = jweb.sign({ email: email,user_id:data.user_id }, secret, { expiresIn: '3d' })
       // console.log(token)
       return res.status(200).json({ token })     
     }else{
@@ -75,28 +75,43 @@ try {
 
 
 
-router.post('/postmsg',async(req,res)=>{
+router.post('/createChat', authMiddleware, async (req, res) => {
   try {
-   
-    const {sender,receiver} = req.body
-    data =  new chat({sender,receiver})
-    console.log('data: ', data);
-    await data.save()
-    return res.status(200).json(data)
+    console.log(req.body);
+    
+    const { sender, receiver, receiverId } = req.body;
+    const senderId = req.user_id; 
+
+    if (!sender || !receiver || !senderId || !receiverId) {
+      return res.status(400).json({ msg: 'All fields are required.' });
+    }
+
+    const newChat = new chat({
+      sender,
+      receiver,
+      senderId,
+      receiverId
+    });
+
+
+    await newChat.save();
+
+    res.status(201).json({ msg: 'Chat created successfully', chat: newChat });
   } catch (error) {
     console.log('error: ', error);
-    
+    res.status(500).json({ msg: 'Server error' });
   }
-  })
+});
+
 
  
-  router.get('/getmessage', authMiddleware, async (req, res) => {
+  router.post('/getmessage', authMiddleware, async (req, res) => {
     try {
-      const userId = req.user_id; 
-      console.log(userId);
-      
-      // Fetch chat messages (example: can filter by userId if needed)
-      const data = await chat.find({}); // Adjust query if filtering is needed
+      const userId = req.user_id;     
+      const receiverId = req.body.receiverId;     
+
+      const data = await chat.find({ senderId: userId, receiverId: receiverId }); 
+      console.log('data: ', data);
       
       return res.status(200).json(data);
     } catch (error) {
@@ -104,6 +119,7 @@ router.post('/postmsg',async(req,res)=>{
       res.status(500).json({ msg: 'Server error' });
     }
   });
+  
   
 
 
