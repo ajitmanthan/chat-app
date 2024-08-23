@@ -8,21 +8,8 @@ const chat = require('../model/chat')
 const jweb = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const secret = process.env.Secret_code
-require('../auth/gauth')
+
 const authMiddleware =require('../auth/authMiddleware')
-
-
-router.get('/auth/google',
-  passport.authenticate('google', { scope: ['email', 'profile'] })
-  
-);
-
-router.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/signin', successRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/');
-  }
-);
 
 
 
