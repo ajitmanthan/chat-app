@@ -53,7 +53,6 @@ function Home() {
           'http://localhost:9999/createChat',
           {
             sender: mssg,
-            receiver: mssg,
             receiverId: selectedUserId,
           },
           {
@@ -65,7 +64,7 @@ function Home() {
   
         console.log('response: ', response);
   
-        setMessages((prevMessages) => [...prevMessages, response.data]);
+        setmessage((prevMessages) => [...prevMessages, response.data]);
         setMssg('');
       } catch (error) {
         console.log('error sending message: ', error);
@@ -78,16 +77,21 @@ function Home() {
 
 // ###########################  msg get #########################
 
-// const messagedata = async (e) => {
+useEffect(() => {
+  chatshow()
+}, [message]);
 
-// }
-// useEffect(() => {
-//   messagedata()
-// }, [])
 
+const [a,b ]=useState(0)
+const add = (e)=>{
+  b((p)=>p+1)
+}
 
   return (
     <>
+
+<div onClick={add}>0</div>
+
       <div style={{ display: 'flex' }}>
         <ul>
           {user.map((item, index) => (
@@ -97,7 +101,16 @@ function Home() {
 
         <div className="chatbody" style={{ position: 'relative' }}>
           <div className="chatuser"></div>
-          <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh' }}></div>
+          <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh' }}>
+          {message.map((mg,i)=>(
+       <div key={i}>
+            <div style={{backgroundColor:'grey',margin:'4px', padding:'10px',borderRadius:'10px',color:'white'}}>sender :{mg.sender}</div> 
+           
+       </div>
+          ))}
+          
+        
+          </div>
           <div className="chatsend">
 
             <input

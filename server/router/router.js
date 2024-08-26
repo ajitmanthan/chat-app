@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
      
      bcrypt.hash(password,12,async function(err,be){
  
-const user_id =`user_${Math.floor(Math.random()*100)}`
+const user_id =`user_${Math.floor(Math.random()*1000000)}`
 
       const data = new newuser({ email, password:be, username,user_id })
       const token = jweb.sign({ email: email }, secret)
@@ -77,18 +77,16 @@ try {
 
 router.post('/createChat', authMiddleware, async (req, res) => {
   try {
-    console.log(req.body);
-    
-    const { sender, receiver, receiverId } = req.body;
+   
+    const { sender, receiverId } = req.body;
     const senderId = req.user_id; 
 
-    if (!sender || !receiver || !senderId || !receiverId) {
+    if (!sender  || !senderId || !receiverId) {
       return res.status(400).json({ msg: 'All fields are required.' });
     }
 
     const newChat = new chat({
       sender,
-      receiver,
       senderId,
       receiverId
     });
@@ -104,14 +102,13 @@ router.post('/createChat', authMiddleware, async (req, res) => {
 });
 
 
- 
   router.post('/getmessage', authMiddleware, async (req, res) => {
     try {
       const userId = req.user_id;     
       const receiverId = req.body.receiverId;     
-
+      
       const data = await chat.find({ senderId: userId, receiverId: receiverId }); 
-      console.log('data: ', data);
+      console.log('data: ',data);
       
       return res.status(200).json(data);
     } catch (error) {
