@@ -87,7 +87,6 @@ function Home() {
       alert('Please select a user to chat with.');
     }
   };
-  console.log(message,'messagemessagemessagemessage');
   
 
   return (
