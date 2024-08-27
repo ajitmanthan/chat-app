@@ -1,46 +1,60 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function Home() {
-
-  const [user, setuser] = useState([])
-  const [message, setmessage] = useState([])
-  const [mssg, setMssg] = useState('')
+  const [user, setUser] = useState([]);
+  const [message, setMessage] = useState([]);
+  const [mssg, setMssg] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const userdata = async (e) => {
-    try {
-      const response = await axios.get('http://localhost:9999/getuser')
-      setuser(response.data)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
+  const userdata = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:9999/getuser');
+      setUser(response.data);
     } catch (error) {
-      console.log('error: ', error);
+      console.error('Error fetching users:', error);
+      setError('Failed to load users.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
   useEffect(() => {
-    userdata()
-  }, [])
+    userdata();
+  }, []);
 
-
-  const chatshow = async(e) => {
+  const chatshow = async (e) => {
     try {
-      const token = localStorage.getItem('token')
-     const receiver = e.target.id
-     setSelectedUserId(receiver);
-      const response = await axios.post('http://localhost:9999/getmessage',{receiverId:receiver},{
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      })
-      setmessage(response.data)
+      const token = localStorage.getItem('token');
+      const receiver = e.target.id;
   
+      setSelectedUserId(receiver);
+      
+      const response = await axios.post(
+        'http://localhost:9999/getmessage',
+        { receiverId: receiver },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      console.log('response.data: ', response.data);
+  
+      // Collect all messages from all chat documents
+      const allMessages = response.data.flatMap(chat => chat.messages);
+  
+      setMessage(allMessages);
     } catch (error) {
-      console.log('error: ', error);
+      console.log('Error fetching messages: ', error);
     }
-
-  }
-
-  // ###################### msg send ###########
+  };
+  
 
   const chatsend = async (e) => {
     e.preventDefault();
@@ -52,7 +66,7 @@ function Home() {
         const response = await axios.post(
           'http://localhost:9999/createChat',
           {
-            sender: mssg,
+            content: mssg,
             receiverId: selectedUserId,
           },
           {
@@ -62,57 +76,55 @@ function Home() {
           }
         );
   
-        console.log('response: ', response);
-  
-        setmessage((prevMessages) => [...prevMessages, response.data]);
+        const updatedMessages = response.data.chat.messages;
+        setMessage(updatedMessages);
         setMssg('');
       } catch (error) {
-        console.log('error sending message: ', error);
+        console.log('Error sending message: ', error);
+        alert('Failed to send message. Please try again.');
       }
     } else {
       alert('Please select a user to chat with.');
     }
   };
+  console.log(message,'messagemessagemessagemessage');
   
-
-// ###########################  msg get #########################
-
-useEffect(() => {
-  chatshow()
-}, [message]);
-
-
-const [a,b ]=useState(0)
-const add = (e)=>{
-  b((p)=>p+1)
-}
 
   return (
     <>
-
-<div onClick={add}>0</div>
-
       <div style={{ display: 'flex' }}>
         <ul>
-          {user.map((item, index) => (
-            <li style={{ border: '1px solid black', width: '30vw', height: '60px', listStyle: 'none' }} key={item.user_id} id={item.user_id} onClick={chatshow}>{item.email}</li>
-          ))}
+          {loading ? (
+            <li>Loading...</li>
+          ) : error ? (
+            <li>{error}</li>
+          ) : (
+            user.map((item) => (
+              <li
+                style={{ border: '1px solid black', width: '30vw', height: '60px', listStyle: 'none' }}
+                key={item.user_id}
+                id={item.user_id}
+                onClick={chatshow}
+              >
+                {item.email}
+              </li>
+            ))
+          )}
         </ul>
 
         <div className="chatbody" style={{ position: 'relative' }}>
           <div className="chatuser"></div>
-          <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh' }}>
-          {message.map((mg,i)=>(
-       <div key={i}>
-            <div style={{backgroundColor:'grey',margin:'4px', padding:'10px',borderRadius:'10px',color:'white'}}>sender :{mg.sender}</div> 
-           
-       </div>
-          ))}
-          
-        
+          <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh', overflowY: 'auto' }}>
+            {message.map((mg, i) => (
+              <div key={i}>
+                {mg.senderId}
+                <div style={{ backgroundColor: 'grey', margin: '4px', padding: '10px', borderRadius: '10px', color: 'white' }}>
+                 {mg.content}
+                </div>
+              </div>
+            ))}
           </div>
           <div className="chatsend">
-
             <input
               type="text"
               name="mssg"
@@ -121,22 +133,18 @@ const add = (e)=>{
               style={{ width: '40vw', height: '4vh' }}
               onChange={(e) => setMssg(e.target.value)}
             />
-
-            <button type="submit"
+            <button
+              type="submit"
               onClick={chatsend}
-              style={{ width: '10vw', height: '4vh' }}>send</button>
-
+              style={{ width: '10vw', height: '4vh' }}
+            >
+              Send
+            </button>
           </div>
-
         </div>
-
       </div>
-
-
-
-
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;

@@ -4,7 +4,7 @@ const router = express.Router()
 const passport = require('passport')
 const newuser = require('../model/Signup')
 const message = require('../model/message')
-const chat = require('../model/chat')
+const Chat = require('../model/chat')
 const jweb = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const secret = process.env.Secret_code
@@ -46,6 +46,7 @@ router.post('/signin', async (req, res) => {
       return res.json({ msg: 'mc sahi se dal details' })
     }
       ismatch = await bcrypt.compare(password,data.password)
+      console.log('ismatch: ', ismatch);
 
     if(ismatch){
       const token = jweb.sign({ email: email,user_id:data.user_id }, secret, { expiresIn: '3d' })
@@ -72,29 +73,23 @@ try {
 })
 
 
-
-
-
-router.post('/createChat', authMiddleware, async (req, res) => {
+router.post('/getmessage', authMiddleware, async (req, res) => {
   try {
-   
-    const { sender, receiverId } = req.body;
-    const senderId = req.user_id; 
+    const userId = req.user_id;     
+    const receiverId = req.body.receiverId;     
 
-    if (!sender  || !senderId || !receiverId) {
-      return res.status(400).json({ msg: 'All fields are required.' });
-    }
+    console.log(userId, receiverId);
 
-    const newChat = new chat({
-      sender,
-      senderId,
-      receiverId
+    const data = await Chat.find({
+      $or: [
+        { user1Id: userId, user2Id: receiverId },
+        { user1Id: receiverId, user2Id: userId }
+      ]
     });
 
-
-    await newChat.save();
-
-    res.status(201).json({ msg: 'Chat created successfully', chat: newChat });
+    console.log('data: ', data);
+   
+    return res.status(200).json(data);
   } catch (error) {
     console.log('error: ', error);
     res.status(500).json({ msg: 'Server error' });
@@ -102,22 +97,63 @@ router.post('/createChat', authMiddleware, async (req, res) => {
 });
 
 
-  router.post('/getmessage', authMiddleware, async (req, res) => {
-    try {
-      const userId = req.user_id;     
-      const receiverId = req.body.receiverId;     
-      
-      const data = await chat.find({ senderId: userId, receiverId: receiverId }); 
-      console.log('data: ',data);
-      
-      return res.status(200).json(data);
-    } catch (error) {
-      console.log('error: ', error);
-      res.status(500).json({ msg: 'Server error' });
+
+
+
+const createOrUpdateChat = async (user1Id, user2Id, message) => {
+  try {
+    let chat = await Chat.findOne({
+      $or: [
+        { user1Id, user2Id },
+        { user1Id: user2Id, user2Id: user1Id }
+      ]
+    });
+
+    if (!chat) {
+      chat = new Chat({
+        user1Id,
+        user2Id,
+        messages: [message],
+      });
+    } else {
+      chat.messages.push(message);
     }
-  });
-  
-  
+
+    await chat.save();
+    return chat;
+  } catch (error) {
+    console.error('Error creating or updating chat:', error);
+    throw error;
+  }
+};
+
+// Create or update chat route
+router.post('/createChat', authMiddleware, async (req, res) => {
+  try {
+    
+    const { content, receiverId } = req.body;
+    const senderId = req.user_id; 
+console.log(content,senderId,receiverId);
+
+    if (!content || !senderId || !receiverId) {
+      return res.status(400).json({ msg: 'All fields are required.' });
+    }
+
+    const message = {
+      senderId,
+      content,
+      timestamp: new Date(),
+    };
+
+    const chat = await createOrUpdateChat(senderId, receiverId, message);
+
+    res.status(201).json({ msg: 'Chat created or updated successfully', chat });
+  } catch (error) {
+    console.log('Error: ', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 
 
 module.exports = router

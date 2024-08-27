@@ -1,6 +1,6 @@
 const mon = require('mongoose')
 
-let a = new mon.Schema({
+let userschema = new mon.Schema({
     email:{
         type:String,
         required:true
@@ -24,6 +24,6 @@ let a = new mon.Schema({
     }
 })
 
-let b = mon.model('1',a)
+let User = mon.model('User',userschema)
 
-module.exports = b
+module.exports = User
