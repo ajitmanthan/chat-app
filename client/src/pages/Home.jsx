@@ -4,11 +4,17 @@ import { Link } from 'react-router-dom';
 
 function Home() {
   const [user, setUser] = useState([]);
+  const [singleUser, setSingleUser] = useState({});
   const [message, setMessage] = useState([]);
   const [mssg, setMssg] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+
+// ##########################  sidebar user  #############################
+
+
 
   const userdata = async () => {
     setLoading(true);
@@ -27,26 +33,33 @@ function Home() {
     userdata();
   }, []);
 
+
+// ##########################  sidebar user  #############################
+
+
+
+
+// ##########################  mesage show on click  #############################
+
+
   const chatshow = async (e) => {
     try {
       const token = localStorage.getItem('token');
-      const receiver = e.target.id;
-  
-      setSelectedUserId(receiver);
+      const userString = e.currentTarget.getAttribute('data-user');
+      const userObject = JSON.parse(userString);
+      setSingleUser(userObject)
+      setSelectedUserId(userObject.user_id);
       
       const response = await axios.post(
         'http://localhost:9999/getmessage',
-        { receiverId: receiver },
+        { receiverId: userObject.user_id },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-  
-      console.log('response.data: ', response.data);
-  
-      // Collect all messages from all chat documents
+
       const allMessages = response.data.flatMap(chat => chat.messages);
   
       setMessage(allMessages);
@@ -55,6 +68,12 @@ function Home() {
     }
   };
   
+
+// ##########################  mesage show on click  #############################
+
+
+
+// ##########################  mesage send #############################
 
   const chatsend = async (e) => {
     e.preventDefault();
@@ -87,7 +106,12 @@ function Home() {
       alert('Please select a user to chat with.');
     }
   };
-  
+
+// ##########################  mesage send #############################
+
+
+
+
 
   return (
     <>
@@ -103,25 +127,46 @@ function Home() {
                 style={{ border: '1px solid black', width: '30vw', height: '60px', listStyle: 'none' }}
                 key={item.user_id}
                 id={item.user_id}
+                data-user={JSON.stringify(item)}
                 onClick={chatshow}
               >
-                {item.email}
+                {item.username}
               </li>
             ))
           )}
         </ul>
 
         <div className="chatbody" style={{ position: 'relative' }}>
-          <div className="chatuser"></div>
+          <div className="chatuser"> 
+          <Link to={`/user/${singleUser.username}/${singleUser._id}`}>
+          {singleUser.username}</Link> 
+            </div>
           <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh', overflowY: 'auto' }}>
-            {message.map((mg, i) => (
-              <div key={i}>
-                {mg.senderId}
-                <div style={{ backgroundColor: 'grey', margin: '4px', padding: '10px', borderRadius: '10px', color: 'white' }}>
-                 {mg.content}
-                </div>
-              </div>
-            ))}
+  
+
+{message.map((mg, i) => (
+  <div 
+    key={i} 
+    style={{
+      display: 'flex', 
+      justifyContent: mg.senderId === selectedUserId ? 'flex-end' : 'flex-start'
+    }}
+  >
+    <div 
+      style={{ 
+        backgroundColor: mg.senderId === selectedUserId ? 'grey' : 'skyblue', 
+        margin: '4px', 
+        padding: '10px', 
+        borderRadius: '10px', 
+        color: 'white', 
+        maxWidth: '60%', 
+      }}
+    >
+      {mg.content}
+    </div>
+  </div>
+))}
+
           </div>
           <div className="chatsend">
             <input

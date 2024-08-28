@@ -84,6 +84,7 @@ router.post('/getmessage', authMiddleware, async (req, res) => {
       $or: [
         { user1Id: userId, user2Id: receiverId },
         { user1Id: receiverId, user2Id: userId }
+        // { user1Id: userId, user2Id: userId }
       ]
     });
 
@@ -153,6 +154,20 @@ console.log(content,senderId,receiverId);
     res.status(500).json({ msg: 'Server error' });
   }
 });
+
+
+router.get('/userProfile',async(req,res)=>{
+  try {
+    const {userId}=req.body
+    data = await newuser.find({})
+    return res.status(200).json(data)
+  
+  } catch (error) {
+    console.log('error: ', error);
+    
+  }
+  })
+  
 
 
 
