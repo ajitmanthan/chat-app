@@ -159,7 +159,8 @@ console.log(content,senderId,receiverId);
 router.get('/userProfile',async(req,res)=>{
   try {
     const {userId}=req.body
-    data = await newuser.find({})
+    data = await newuser.findOne({userId})
+    
     return res.status(200).json(data)
   
   } catch (error) {
