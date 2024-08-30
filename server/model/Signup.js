@@ -21,6 +21,10 @@ let userschema = new mon.Schema({
     user_id:{
         type:String ,
         required:true,
+    },
+    Profile:{
+        type:String,
+        
     }
 })
 

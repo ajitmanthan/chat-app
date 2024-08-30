@@ -149,12 +149,12 @@ function Home() {
     key={i} 
     style={{
       display: 'flex', 
-      justifyContent: mg.senderId === selectedUserId ? 'flex-end' : 'flex-start'
+      justifyContent: mg.senderId === selectedUserId ? 'flex-start' : 'flex-end'
     }}
   >
     <div 
       style={{ 
-        backgroundColor: mg.senderId === selectedUserId ? 'grey' : 'skyblue', 
+        backgroundColor: mg.senderId === selectedUserId ? 'black' : 'green', 
         margin: '4px', 
         padding: '10px', 
         borderRadius: '10px', 
