@@ -45,10 +45,10 @@ router.post('/signin', async (req, res) => {
     const { email, password } = req.body
     let data = await newuser.findOne({ email: email })
     if (!data) {
-      return res.json({ msg: ' sahi se dal details' })
+      console.log('data: ', data);
+      return res.status(400).json({ msg: ' sahi se dal details' })
     }
     ismatch = await bcrypt.compare(password, data.password)
-    console.log('ismatch: ', ismatch);
 
     if (ismatch) {
       const token = jweb.sign({ email: email, user_id: data.user_id }, secret, { expiresIn: '3d' })
@@ -79,9 +79,6 @@ router.post('/getmessage', authMiddleware, async (req, res) => {
   try {
     const userId = req.user_id;
     const receiverId = req.body.receiverId;
-
-    console.log(userId, receiverId);
-
     const data = await Chat.find({
       $or: [
         { user1Id: userId, user2Id: receiverId },
@@ -89,8 +86,6 @@ router.post('/getmessage', authMiddleware, async (req, res) => {
         // { user1Id: userId, user2Id: userId }
       ]
     });
-
-    console.log('data: ', data);
 
     return res.status(200).json(data);
   } catch (error) {
@@ -158,10 +153,11 @@ router.post('/createChat', authMiddleware, async (req, res) => {
 });
 
 
-router.get('/userProfile', async (req, res) => {
+router.post('/userProfile', async (req, res) => {
   try {
+
     const { userId } = req.body
-    data = await newuser.findOne({ userId })
+    data = await newuser.findOne({ _id:userId })
 
     return res.status(200).json(data)
 
@@ -174,7 +170,7 @@ router.get('/userProfile', async (req, res) => {
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/uploads/');
+    cb(null, 'uploads');
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

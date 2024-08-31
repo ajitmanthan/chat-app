@@ -6,7 +6,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
-import OAuthCallback from './pages/OAuthCallback'; 
+import Forgot from './pages/Forgot'; 
 import { AuthContext } from './AuthContext';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
       <Route path="/user/:username/:id" element={isLoggedIn ? <Profile /> : <Navigate to="/signin" />} />
       <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/signin" />} />
 
-      <Route path="/auth/google" element={<OAuthCallback />} /> {/* New route */}
+      <Route path="/forgotpassword" element={<Forgot />} /> 
     </Routes>
   );
 }

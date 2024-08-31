@@ -7,17 +7,18 @@ function Profile() {
   const fileInputRef = useRef(null);
   const userprm = useParams();
   const userId = userprm.id;
+
   const [showUser, setShowUser] = useState({});
   const [image, setImage] = useState(pro);
   const [imageFile, setImageFile] = useState(null);
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get(`http://localhost:9999/userProfile`, { params: { userId } });
+      const response = await axios.post(`http://localhost:9999/userProfile`, {userId: userId });
       setShowUser(response.data);
 
-      if (response.data.profileImage) {
-        setImage(response.data.profileImage);
+      if (response.data.Profile) {
+        setImage(`http://localhost:9999/${response.data.Profile}`);
       } else {
         setImage(pro);
       }
@@ -36,10 +37,10 @@ function Profile() {
       const objectUrl = URL.createObjectURL(selectedFile);
       setImage(objectUrl);
       setImageFile(selectedFile);
-
+ 
       setShowUser((prevState) => ({
         ...prevState,
-        profileImage: objectUrl,
+        Profile: objectUrl,
       }));
     }
   };
@@ -50,9 +51,9 @@ function Profile() {
       formData.append('userId', userId);
       formData.append('username', showUser.username || '');
       formData.append('email', showUser.email || '');
-  
+
       if (imageFile) {
-        formData.append('Profile', imageFile); 
+        formData.append('Profile', imageFile);
       }
 
       const response = await axios.post(`http://localhost:9999/updateUser`, formData, {
@@ -60,11 +61,11 @@ function Profile() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       setShowUser(response.data);
 
-      if (response.data.profileImage) {
-        setImage(response.data.profileImage);
+      if (response.data.Profile) {
+        setImage(`http://localhost:9999/${response.data.Profile}`);
       }
     } catch (error) {
       console.error('Error updating user data:', error);
@@ -79,7 +80,12 @@ function Profile() {
         <span id="profile_edit" onClick={() => fileInputRef.current.click()}>✎</span>
 
         <div className="profile_icon">
-          <img src={image} alt="profile" id="profile_image" />
+          <img
+            src={image}
+            // showUser?.Profile ? `http://localhost:9999/${showUser.Profile}` : image
+            alt="profile"
+            id="profile_image"
+          />
         </div>
 
         <input

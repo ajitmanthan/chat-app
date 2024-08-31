@@ -17,6 +17,7 @@ function Signin() {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:9999/signin', user); 
+      console.log('response: ', response);
       if(response.status!=200){
       console.log(response.data.msg,'fff');
       
