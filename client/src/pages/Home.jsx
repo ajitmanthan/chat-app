@@ -1,8 +1,15 @@
+
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import io from 'socket.io-client';
+const socket = io('http://localhost:9999'); 
 
 function Home() {
+
+
+
+
   const [user, setUser] = useState([]);
   const [singleUser, setSingleUser] = useState({});
   const [message, setMessage] = useState([]);
@@ -10,17 +17,26 @@ function Home() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionUser, setSessionUser] = useState('');
+
+  const chatBoxRef = useRef(null);
 
 
-// ##########################  sidebar user  #############################
+
 
 
 
   const userdata = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:9999/getuser');
-      setUser(response.data);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:9999/getuser', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUser(response.data.data);
+      setSessionUser(response.data.user)
     } catch (error) {
       console.error('Error fetching users:', error);
       setError('Failed to load users.');
@@ -28,28 +44,24 @@ function Home() {
       setLoading(false);
     }
   };
+ 
 
   useEffect(() => {
     userdata();
   }, []);
 
-
-// ##########################  sidebar user  #############################
-
-
-
-
-// ##########################  mesage show on click  #############################
-
-
+  // Fetch and display messages
   const chatshow = async (e) => {
+    const userString = e.currentTarget.getAttribute('data-user');
+    const userObject = JSON.parse(userString);
+    setSingleUser(userObject);
+    setSelectedUserId(userObject.user_id);
+
+    socket.emit('joinRoom', userObject.user_id);
+
+    // Fetch initial chat history
     try {
       const token = localStorage.getItem('token');
-      const userString = e.currentTarget.getAttribute('data-user');
-      const userObject = JSON.parse(userString);
-      setSingleUser(userObject)
-      setSelectedUserId(userObject.user_id);
-      
       const response = await axios.post(
         'http://localhost:9999/getmessage',
         { receiverId: userObject.user_id },
@@ -61,42 +73,43 @@ function Home() {
       );
 
       const allMessages = response.data.flatMap(chat => chat.messages);
-  
       setMessage(allMessages);
     } catch (error) {
       console.log('Error fetching messages: ', error);
     }
   };
+
+  useEffect(() => {
+    socket.on('receiveMessage', (incomingMessage) => {
+      if (incomingMessage.receiverId === selectedUserId || incomingMessage.senderId === selectedUserId) {
+        setMessage(prevMessages => [...prevMessages, incomingMessage]);
+      }
+    });
   
-
-// ##########################  mesage show on click  #############################
-
-
-
-// ##########################  mesage send #############################
-
-  const chatsend = async (e) => {
+    return () => {
+      socket.off('receiveMessage');
+    };
+  }, [selectedUserId]);
+  
+  
+  
+  const chatsend = (e) => {
     e.preventDefault();
   
     if (selectedUserId) {
       try {
-        const token = localStorage.getItem('token');
+        const newMessage = {
+          content: mssg,
+          receiverId: selectedUserId,
+          senderId: sessionUser.user_id, 
+          timestamp: new Date(),
+        };
   
-        const response = await axios.post(
-          'http://localhost:9999/createChat',
-          {
-            content: mssg,
-            receiverId: selectedUserId,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+
+        console.log('newMessageggggggggggggggggggggggggggg: ', newMessage);
+
+        socket.emit('sendMessage', newMessage);
   
-        const updatedMessages = response.data.chat.messages;
-        setMessage(updatedMessages);
         setMssg('');
       } catch (error) {
         console.log('Error sending message: ', error);
@@ -107,15 +120,12 @@ function Home() {
     }
   };
 
-// ##########################  mesage send #############################
-
-
-
+  useEffect(() => {
+    chatBoxRef.current?.scrollTo(0, chatBoxRef.current.scrollHeight);
+  }, [message]);
 
   return (
     <>
-
-
       <div style={{ display: 'flex' }}>
         <ul>
           {loading ? (
@@ -138,36 +148,38 @@ function Home() {
         </ul>
 
         <div className="chatbody" style={{ position: 'relative' }}>
-          <div className="chatuser"> 
-          <Link to={`/user/${singleUser.username}/${singleUser._id}`}>
-          {singleUser.username}</Link> 
-            </div>
-          <div className="chatbox" style={{ border: '1px solid black', width: '60vw', height: '90vh', overflowY: 'auto' }}>
-  
-
-{message.map((mg, i) => (
-  <div 
-    key={i} 
-    style={{
-      display: 'flex', 
-      justifyContent: mg.senderId === selectedUserId ? 'flex-start' : 'flex-end'
-    }}
-  >
-    <div 
-      style={{ 
-        backgroundColor: mg.senderId === selectedUserId ? 'black' : 'green', 
-        margin: '4px', 
-        padding: '10px', 
-        borderRadius: '10px', 
-        color: 'white', 
-        maxWidth: '60%', 
-      }}
-    >
-      {mg.content}
-    </div>
-  </div>
-))}
-
+          <div className="chatuser">
+            <Link to={`/user/${singleUser.username}/${singleUser._id}`}>
+              {singleUser.username}
+            </Link>
+          </div>
+          <div
+            className="chatbox"
+            style={{ border: '1px solid black', width: '60vw', height: '90vh', overflowY: 'auto' }}
+            ref={chatBoxRef}
+          >
+            {message.map((mg, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  justifyContent: mg.senderId === selectedUserId ? 'flex-start' : 'flex-end',
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: mg.senderId === selectedUserId ? 'black' : 'green',
+                    margin: '4px',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    color: 'white',
+                    maxWidth: '60%',
+                  }}
+                >
+                  {mg.content}
+                </div>
+              </div>
+            ))}
           </div>
           <div className="chatsend">
             <input
